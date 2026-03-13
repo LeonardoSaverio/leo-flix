@@ -413,6 +413,9 @@ function App() {
                             allowFullScreen
                             title="Video Player"
                         />
+                        <button className="close-player-mobile" onClick={() => setShowPlayer(false)}>
+                            <X size={24} />
+                        </button>
                     </div>
                 ) : (
                     <div className="details-main">
