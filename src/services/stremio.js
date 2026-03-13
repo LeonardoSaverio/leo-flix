@@ -4,10 +4,17 @@ const CINEMETA_URL = 'https://v3-cinemeta.strem.io';
 const KITSU_URL = 'https://anime-kitsu.strem.fun';
 
 export const stremioService = {
-    async getTrending(type = 'movie') {
+    async getTrending(type = 'movie', genre = null, language = 'pt-BR') {
         try {
             const baseUrl = type === 'anime' ? KITSU_URL : CINEMETA_URL;
-            const path = type === 'anime' ? '/catalog/anime/kitsu-anime-trending.json' : `/catalog/${type}/top.json`;
+            let path = type === 'anime' ? '/catalog/anime/kitsu-anime-trending.json' : `/catalog/${type}/top.json`;
+
+            // Note: Cinemeta doesn't reliably support localized catalogs via this endpoint, 
+            // but some metadata remains accessible.
+            if (genre && type !== 'anime') {
+                path = `/catalog/${type}/top/genre=${encodeURIComponent(genre)}.json`;
+            }
+
             const response = await axios.get(`${baseUrl}${path}`);
             return response.data.metas || [];
         } catch (error) {
@@ -16,7 +23,7 @@ export const stremioService = {
         }
     },
 
-    async search(query, type = 'movie') {
+    async search(query, type = 'movie', language = 'pt-BR') {
         try {
             const baseUrl = type === 'anime' ? KITSU_URL : CINEMETA_URL;
             const path = type === 'anime'
@@ -30,12 +37,14 @@ export const stremioService = {
         }
     },
 
-    async getMeta(type, id) {
+    async getMeta(type, id, language = 'pt-BR') {
         try {
             const isKitsu = type === 'anime' || (id && id.toString().startsWith('kitsu:'));
             const baseUrl = isKitsu ? KITSU_URL : CINEMETA_URL;
-            // Kitsu addon metas use /meta/anime/:id.json even if the item type is 'series' internally
             const typePath = isKitsu ? 'anime' : type;
+
+            // Try to use localized metadata if available in the future.
+            // For now, we fetch the main meta.
             const response = await axios.get(`${baseUrl}/meta/${typePath}/${id}.json`);
             return response.data.meta;
         } catch (error) {
