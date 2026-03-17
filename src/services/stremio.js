@@ -6,13 +6,41 @@ const KITSU_URL = 'https://anime-kitsu.strem.fun';
 export const stremioService = {
     async getTrending(type = 'movie', genre = null, language = 'pt-BR') {
         try {
+            if (type === 'dorama') {
+                if (genre) {
+                    const searchQuery = `Korean Drama ${genre}`;
+                    return this.search(searchQuery, 'series', language);
+                } else {
+                    // Fetch an extensive list by combining multiple relevant searches
+                    const queries = ['Korean Drama', 'Dorama', 'K-Drama', 'Asian Drama', 'C-Drama'];
+                    const searchPromises = queries.map(q => this.search(q, 'series', language));
+                    const resultsArray = await Promise.all(searchPromises);
+
+                    // Flatten and remove duplicates by ID
+                    const allMetas = resultsArray.flat();
+                    const uniqueMetas = [];
+                    const seenIds = new Set();
+
+                    for (const meta of allMetas) {
+                        if (meta && meta.id && !seenIds.has(meta.id)) {
+                            seenIds.add(meta.id);
+                            uniqueMetas.push(meta);
+                        }
+                    }
+
+                    return uniqueMetas;
+                }
+            }
+
             const baseUrl = type === 'anime' ? KITSU_URL : CINEMETA_URL;
             let path = type === 'anime' ? '/catalog/anime/kitsu-anime-trending.json' : `/catalog/${type}/top.json`;
 
-            // Note: Cinemeta doesn't reliably support localized catalogs via this endpoint, 
-            // but some metadata remains accessible.
-            if (genre && type !== 'anime') {
-                path = `/catalog/${type}/top/genre=${encodeURIComponent(genre)}.json`;
+            if (genre) {
+                if (type === 'anime') {
+                    path = `/catalog/anime/kitsu-anime-list/genre=${encodeURIComponent(genre)}.json`;
+                } else {
+                    path = `/catalog/${type}/top/genre=${encodeURIComponent(genre)}.json`;
+                }
             }
 
             const response = await axios.get(`${baseUrl}${path}`);

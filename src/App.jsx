@@ -24,7 +24,7 @@ function App() {
     const [language, setLanguage] = useState('pt-BR'); // 'pt-BR' | 'en'
     const observer = useRef();
 
-    const genres = [
+    const movieSeriesGenres = [
         { id: '', name: 'Todos os Gêneros' },
         { id: 'Action', name: 'Ação' },
         { id: 'Adventure', name: 'Aventura' },
@@ -45,6 +45,31 @@ function App() {
         { id: 'War', name: 'Guerra' },
         { id: 'Western', name: 'Faroeste' }
     ];
+
+    const animeGenres = [
+        { id: '', name: 'Todos os Gêneros' },
+        { id: 'Action', name: 'Ação' },
+        { id: 'Adventure', name: 'Aventura' },
+        { id: 'Comedy', name: 'Comédia' },
+        { id: 'Drama', name: 'Drama' },
+        { id: 'Sci-Fi', name: 'Ficção Científica' },
+        { id: 'Space', name: 'Espaço' },
+        { id: 'Mystery', name: 'Mistério' },
+        { id: 'Magic', name: 'Magia' },
+        { id: 'Supernatural', name: 'Sobrenatural' },
+        { id: 'Police', name: 'Policial' },
+        { id: 'Fantasy', name: 'Fantasia' },
+        { id: 'Sports', name: 'Esportes' },
+        { id: 'Romance', name: 'Romance' },
+        { id: 'Slice of Life', name: 'Slice of Life' },
+        { id: 'Mecha', name: 'Mecha' },
+        { id: 'Psychological', name: 'Psicológico' },
+        { id: 'Thriller', name: 'Suspense' },
+        { id: 'Horror', name: 'Terror' }
+    ];
+
+    const activeGenres = mediaType === 'anime' ? animeGenres : movieSeriesGenres;
+
 
     // Series selection
     const [selectedSeason, setSelectedSeason] = useState(1);
@@ -144,9 +169,9 @@ function App() {
         }
     };
 
-    const openDetails = async (item) => {
-        // We pass mediaType so getMeta can use it for Anime checking
-        const metaType = mediaType === 'anime' ? 'anime' : item.type;
+    const handleItemClick = async (item) => {
+        // We pass mediaType so getMeta can use it for Anime/Dorama checking
+        const metaType = (mediaType === 'anime' || mediaType === 'dorama') ? (item.type === 'movie' ? 'movie' : 'series') : item.type;
         const meta = await stremioService.getMeta(metaType, item.id, language);
 
         const detailedItem = meta || item;
@@ -157,7 +182,7 @@ function App() {
         setView('details');
         window.scrollTo(0, 0);
 
-        if (detailedItem.type === 'series' || mediaType === 'anime') {
+        if (detailedItem.type === 'series' || mediaType === 'anime' || mediaType === 'dorama') {
             setSelectedSeason(1);
             setSelectedEpisode(1);
             // Don't auto-start first episode of series on open, let user choose
@@ -266,6 +291,14 @@ function App() {
                     >
                         Animes
                     </button>
+                    {/*
+                    <button
+                        className={`nav-btn ${mediaType === 'dorama' ? 'active' : ''}`}
+                        onClick={() => setMediaType('dorama')}
+                    >
+                        Doramas
+                    </button>
+                    */}
                 </div>
                 <div className="lang-toggle">
                     <button
@@ -289,20 +322,25 @@ function App() {
                     <input
                         type="text"
                         className="search-input"
-                        placeholder={`Pesquisar ${mediaType === 'movie' ? 'filmes' : mediaType === 'series' ? 'séries' : 'animes'}...`}
+                        placeholder={
+                            mediaType === 'movie' ? "Pesquisar Filmes..." :
+                                mediaType === 'series' ? "Pesquisar Séries..." :
+                                    mediaType === 'anime' ? "Pesquisar Animes..." :
+                                        "Pesquisar Doramas..."
+                        }
                         value={searchQuery}
-                        onChange={handleSearch}
+                        onChange={(e) => handleSearch(e.target.value)}
                     />
                 </div>
 
-                {mediaType !== 'anime' && searchQuery.length === 0 && (
+                {searchQuery.length === 0 && (
                     <div className="filters-container">
                         <select
                             className="filter-select"
                             value={selectedGenre}
                             onChange={(e) => setSelectedGenre(e.target.value)}
                         >
-                            {genres.map(g => (
+                            {activeGenres.map(g => (
                                 <option key={g.id} value={g.id}>{g.name}</option>
                             ))}
                         </select>
@@ -335,7 +373,7 @@ function App() {
                                 ref={isLast ? lastItemElementRef : null}
                                 key={item.id}
                                 className="movie-card"
-                                onClick={() => openDetails(item)}
+                                onClick={() => handleItemClick(item)}
                             >
                                 <img
                                     src={item.poster}
