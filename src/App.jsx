@@ -329,7 +329,7 @@ function App() {
                                         "Pesquisar Doramas..."
                         }
                         value={searchQuery}
-                        onChange={(e) => handleSearch(e.target.value)}
+                        onChange={handleSearch}
                     />
                 </div>
 
